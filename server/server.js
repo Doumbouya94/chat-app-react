@@ -12,12 +12,26 @@ app.use(express.json());
 const server = http.createServer(app);
 
 // ─── Socket.io ──────────────────────────────
-// CORS: autoriser le frontend deploye via CLIENT_URL (Render/Vercel)
-const io = new Server(server,
-    { cors: { origin: process.env.CLIENT_URL || "*",
-// process.env.CLIENT_URL = URL frontend en production
-// "*" = accepter toutes les origines (moins securise, utile en dev)
-      methods: ["GET", "POST"], }, });
+// CORS: autoriser localhost, Vercel et CLIENT_URL (si defini)
+const allowedOrigins = new Set(
+    (process.env.CLIENT_URL || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+);
+
+const io = new Server(server, {
+    cors: {
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+            if (origin.includes("localhost")) return callback(null, true);
+            if (origin.endsWith(".vercel.app")) return callback(null, true);
+            if (allowedOrigins.has(origin)) return callback(null, true);
+            return callback(new Error(`Origin non autorisee: ${origin}`));
+        },
+        methods: ["GET", "POST"],
+    },
+});
 
 
 
