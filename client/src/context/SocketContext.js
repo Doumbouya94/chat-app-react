@@ -13,7 +13,7 @@ const SocketContext = createContext(null);
 // Si la variable est absente/invalide:
 // - localhost en developpement local
 // - URL Render en fallback de production
-const LOCAL_SOCKET_URL = "http://localhost:5000";
+const LOCAL_SOCKET_URL = "http://localhost:5001";
 const RENDER_FALLBACK_URL = "https://chat-app-react-4a3k.onrender.com";
 const envUrl = (process.env.REACT_APP_SERVER_URL || "").trim();
 const isPlaceholderUrl = envUrl.includes("votre-app.railway.app");

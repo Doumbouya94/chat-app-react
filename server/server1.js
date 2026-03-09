@@ -128,6 +128,6 @@ function getLocalIP() {
 }
 
 // ─── Démarrage serveur ────────────────────
-const PORT = 5000;
+const PORT = 5001;
 const localIP = getLocalIP();
 server.listen(PORT, () => console.log(`🚀 Serveur sur http://${localIP}:${PORT}`));
