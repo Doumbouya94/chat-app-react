@@ -12,7 +12,6 @@ app.use(express.json());
 const server = http.createServer(app);
 
 // ─── Socket.io ──────────────────────────────
-// CORS: autoriser localhost, Vercel et CLIENT_URL (si defini)
 const allowedOrigins = new Set(
     (process.env.CLIENT_URL || "")
         .split(",")
@@ -33,17 +32,15 @@ const io = new Server(server, {
     },
 });
 
-
-
 // ─── Rooms prédéfinies ───────────────────────
 const rooms = {
     "Generale":  { users: [] },
     "Codding":   { users: [] },
-    "Support":    { users: [] },
+    "Support":   { users: [] },
     "Entraide":  { users: [] },
 };
 
-// ─── Route REST : récupérer la liste des rooms ───
+// ─── Route REST ─────────────────────────────
 app.get("/rooms", (req, res) => {
     const list = Object.entries(rooms).map(([name, data]) => ({
         name,
@@ -56,7 +53,6 @@ app.get("/rooms", (req, res) => {
 io.on("connection", (socket) => {
     console.log(`✅ Connecté : ${socket.id}`);
 
-    // Envoyer la liste des rooms dès la connexion
     socket.emit("rooms_list", getRoomsList());
 
     // ── Rejoindre une room ──────────────────
@@ -82,6 +78,14 @@ io.on("connection", (socket) => {
 
         io.to(room).emit("room_users", rooms[room].users);
         io.emit("rooms_list", getRoomsList());
+
+        // 🔹 Historique d'activité
+        io.emit("activity_log", {
+            username,
+            action: "a rejoint",
+            room,
+            time: now(),
+        });
     });
 
     // ── Créer une nouvelle room ─────────────
@@ -97,6 +101,31 @@ io.on("connection", (socket) => {
     socket.on("send_message", (data) => {
         console.log(`💬 "${data.author}" → "${data.room}": ${data.message}`);
         io.to(data.room).emit("receive_message", data);
+    });
+
+    // ── Quitter une room manuellement ───────
+    socket.on("leave_room", ({ username, room }) => {
+        socket.leave(room);
+        if (rooms[room]) {
+            rooms[room].users = rooms[room].users.filter(u => u.socketId !== socket.id);
+
+            io.to(room).emit("receive_message", {
+                author: "Système",
+                message: `${username} a quitté la salle 👋`,
+                time: now(),
+                system: true,
+            });
+            io.to(room).emit("room_users", rooms[room].users);
+            io.emit("rooms_list", getRoomsList());
+
+            // 🔹 Historique d'activité
+            io.emit("activity_log", {
+                username,
+                action: "a quitté",
+                room,
+                time: now(),
+            });
+        }
     });
 
     // ── Déconnexion ─────────────────────────
@@ -116,10 +145,18 @@ io.on("connection", (socket) => {
         });
         io.to(room).emit("room_users", rooms[room].users);
         io.emit("rooms_list", getRoomsList());
+
+        // 🔹 Historique d'activité
+        io.emit("activity_log", {
+            username,
+            action: "a quitté",
+            room,
+            time: now(),
+        });
     });
 });
 
-// ─── Helpers ───────────────────────────────
+// ─── Helpers ────────────────────────────────
 function now() {
     return new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
@@ -131,7 +168,6 @@ function getRoomsList() {
     }));
 }
 
-// ─── Fonction pour récupérer l'IP locale ───
 function getLocalIP() {
     const interfaces = os.networkInterfaces();
     for (let iface of Object.values(interfaces)) {
@@ -142,7 +178,7 @@ function getLocalIP() {
     return "localhost";
 }
 
-// ─── Démarrage serveur ────────────────────
+// ─── Démarrage serveur ───────────────────────
 const PORT = process.env.PORT || 5001;
 const localIP = getLocalIP();
 server.listen(PORT, () => console.log(`🚀 Serveur sur http://${localIP}:${PORT}`));
