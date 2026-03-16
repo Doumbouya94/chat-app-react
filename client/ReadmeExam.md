@@ -61,3 +61,19 @@ systeme e tout le monde pour dire que la personne a rejoint.
 - socket.broadcast.to(room).emit() envoie à tout le monde sauf
   l'expediteur. Dans ce projet, on utilise io.to() pour que tout le monde
   reçoive le message en meme temps.
+
+## Déploiement
+
+**Frontend (Vercel) :**
+https://chat-app-react-1bnq45tz8-doumbouya94s-projects.vercel.app
+
+**Backend (Render) :**
+https://chat-app-react-4a3k.onrender.com
+
+## Lancer en local
+
+1. Cloner le repo : git clone https://github.com/Doumbouya94/chat-app-react
+2. Installer les dépendances : cd server && npm install
+3. Lancer le serveur : node server.js
+4. Dans un autre terminal : cd client && npm install && npm start
+5. Ouvrir http://localhost:3000
